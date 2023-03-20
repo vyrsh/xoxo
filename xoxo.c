@@ -124,19 +124,33 @@ void nn(double input[], struct node lay1[], struct node lay2[], double output[])
     f_l(layer1o, layerO, output);
 }
 
+void nn(double input[], double output[]) {
+    double layer1o[9];
+    f_l(input, layer1, layer1o);
+    f_l(layer1o, layerO, output);
+}
+
 void backprop(double arr[], double prd[]) { // input, predicted
     // --Note generate observed from input arr
 
     // cost = (observed_i - predicted_i)^2 for i in output_nodes
-    //cost( f )
+    // slope = yf - yi / x2 - x1 (0.0001)
+    // find  Del. cost / Del. weight
+    double output[]
+    nn(arr, output)
+    double yi = cost( output, prd )
+
+    // now we go through every weight and change it DL. and find new cost.
+    // this way we find slope of cost / weight, and record new weight in array,
+    // and will apply all new weights in end
 
 
 }
 
-// for backprop, we will first new weights and biases, and record it in arrays
+// for backprop, we will first record new weights and biases, and record it in arrays
 // at the end, changes will be applied by looping
 
-// 
+//
 
 
 int max_index(double arr[])
@@ -158,10 +172,10 @@ void ai_play(double arr[])
     double layerOo[9];
     nn(arr, layer1, layerO, layerOo);
     // select max from output
-    
-    printf("cost: %f", );
+    double temp[] = {0,0,0,1,1,1,0,0,0};
+    //printf("cost: %f\n", cost(layerOo, temp));
     int max = max_index(layerOo);
-    printf("%d\n", max);
+    printf("max: %d\n", max);
     //printf("[%d]: %f\n", i+1, layer1o[i]);
 
     if (arr[max]==0)
@@ -180,6 +194,7 @@ void play(double arr[])
         printx(arr);
         user_play(arr);
         play(arr);
+        return;
     }
     else {
         printf("---GAME OVER---\n");
