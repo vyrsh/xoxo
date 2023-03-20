@@ -116,13 +116,13 @@ void f_l(double input[], struct node layer[], double output[])
     }
 }
 
-void nn(double input[], struct node lay1[], struct node lay2[], double output[]) {
-    double layer1o[9];
-    // feed forward 1st layer
-    f_l(input, layer1, layer1o);
-    // 2nd layer
-    f_l(layer1o, layerO, output);
-}
+//void nn(double input[], struct node lay1[], struct node lay2[], double output[]) {
+//    double layer1o[9];
+//    // feed forward 1st layer
+//    f_l(input, layer1, layer1o);
+//    // 2nd layer
+//    f_l(layer1o, layerO, output);
+//}
 
 void nn(double input[], double output[]) {
     double layer1o[9];
@@ -136,9 +136,9 @@ void backprop(double arr[], double prd[]) { // input, predicted
     // cost = (observed_i - predicted_i)^2 for i in output_nodes
     // slope = yf - yi / x2 - x1 (0.0001)
     // find  Del. cost / Del. weight
-    double output[]
-    nn(arr, output)
-    double yi = cost( output, prd )
+    double output[9];
+    nn(arr, output);
+    double yi = cost( output, prd );
 
     // now we go through every weight and change it DL. and find new cost.
     // this way we find slope of cost / weight, and record new weight in array,
@@ -170,7 +170,7 @@ int max_index(double arr[])
 void ai_play(double arr[])
 {
     double layerOo[9];
-    nn(arr, layer1, layerO, layerOo);
+    nn(arr, layerOo);
     // select max from output
     double temp[] = {0,0,0,1,1,1,0,0,0};
     //printf("cost: %f\n", cost(layerOo, temp));
