@@ -18,24 +18,24 @@ void rand_play(int arr[])
     else rand_play(arr);
 }
 
-typedef struct node
+struct node
 {
-    double value;
-    double weights[9];
-    double bias;
+    //long double value;
+    long double weights[9];
+    long double bias;
 };
 // 9I - 9 - 9O
 struct node layer1[9];
 struct node layerO[9];
 
-double sigmoid(double x)
+long double sigmoid(long double x)
 {
     return 1 / (1 + pow(2.71828182845904523536,-x));
 }
 
 
 
-void printx(double arr[])
+void printx(long double arr[])
 {
     printf(" %d | %d | %d\n", (int)arr[0], (int)arr[1], (int)arr[2]);
     printf("-----------\n");
@@ -44,7 +44,7 @@ void printx(double arr[])
     printf(" %d | %d | %d\n", (int)arr[6], (int)arr[7], (int)arr[8]);
 }
 
-int won(double arr[])   // return 1 if win or draw, 0 if game is left
+int won(long double arr[])   // return 1 if win or draw, 0 if game is left
 {
     // 0 1 2
     // 3 4 5
@@ -72,11 +72,18 @@ int won(double arr[])   // return 1 if win or draw, 0 if game is left
     if (arr[2]==arr[4] && arr[4]==arr[6] && (arr[4]==1 || arr[4]==-1)) {
             return 1;
         }
-    return 0;
+
+    // draw, no spaces left
+    for (int i = 0; i<9; i++) {
+        if (arr[i]==0) {
+            return 0;
+        }
+    }
+    return 1;
 
 }
 
-void user_play(double arr[])
+void user_play(long double arr[])
 {
     int num;
     printf("enter num: ");
@@ -90,17 +97,17 @@ void user_play(double arr[])
     }
 }
 
-double cost(double a[], double b[]) {
-    double cost = 0;
+long double cost(long double a[], long double b[]) {
+    long double cost = 0;
     for (int i=0; i<9; i++) {
         cost += pow((a[i] - b[i]) , 2);
     }
     return cost;
 }
 
-void f_l(double input[], struct node layer[], double output[])
+void f_l(long double input[], struct node layer[], long double output[])
 {
-    double sum;
+    long double sum;
     for (int i=0; i<9; i++)
     {
         sum = 0.0;
@@ -112,37 +119,95 @@ void f_l(double input[], struct node layer[], double output[])
         }
 
         output[i] = sigmoid(sum);
-        printf("[%d] %f | %f\n", i, output[i], sum);
+        //printf("[%d] %Lf | %Lf\n", i, output[i], sum);
     }
 }
 
-//void nn(double input[], struct node lay1[], struct node lay2[], double output[]) {
-//    double layer1o[9];
-//    // feed forward 1st layer
-//    f_l(input, layer1, layer1o);
-//    // 2nd layer
-//    f_l(layer1o, layerO, output);
-//}
-
-void nn(double input[], double output[]) {
-    double layer1o[9];
+void nn(long double input[], long double output[]) {
+    long double layer1o[9];
     f_l(input, layer1, layer1o);
     f_l(layer1o, layerO, output);
 }
 
-void backprop(double arr[], double prd[]) { // input, predicted
-    // --Note generate observed from input arr
 
+// |||||||||||||||||||||||||||||||| BACKPROP ||||||||||||||||||||||||||||||||
+void backprop(long double arr[], long double prd[]) { // input, predicted
+    printf("\n----------\n");
+    printx(arr);
+    printx(prd);
+    printf("----------\n");
+    // --Note generate observed from input arr
+    // learning rate = 0.2
+    long double rate = -0.01;
+    long double del = 0.0001;
     // cost = (observed_i - predicted_i)^2 for i in output_nodes
     // slope = yf - yi / x2 - x1 (0.0001)
     // find  Del. cost / Del. weight
-    double output[9];
+    long double output[9];
     nn(arr, output);
-    double yi = cost( output, prd );
-
+    long double yi = cost( output, prd );
+    printf("Ci: %Lf\n", yi);
     // now we go through every weight and change it DL. and find new cost.
     // this way we find slope of cost / weight, and record new weight in array,
     // and will apply all new weights in end
+    long double w1[9][9];
+    long double w2[9][9];
+    long double b1[9];
+    long double b2[9];
+    // nested for loops to iterate through every weight
+    //layer1
+    for (int n = 0; n < 9; n++){
+        layer1[n].bias+=0.1;
+        nn(arr, output);
+        long double yf = cost( output, prd );
+        long double slope = (yf - yi) / 0.1;
+        layer1[n].bias-=0.1;
+        b1[n] = slope*rate;
+
+        for (int i = 0; i < 9; i++) {
+            layer1[n].weights[i]+=del;
+            nn(arr, output);
+            long double yf = cost( output, prd );
+            //printf("Cf: %Lf\n", yf);
+            long double slope = (yf - yi) / del;
+            //printf("ow: %Lf", layer1[n].weights[i]);
+            layer1[n].weights[i]-=del;
+            w1[n][i] = slope*rate;
+            //printf("[%d][%d] W:%Lf S:%Lf\n", n, i, layer1[n].weights[i], slope);
+        }
+    }
+    //layer2
+    for (int n = 0; n < 9; n++){
+        layerO[n].bias+=0.1;
+        nn(arr, output);
+        long double yf = cost( output, prd );
+        long double slope = (yf - yi) / 0.1;
+        layerO[n].bias-=0.1;
+        b2[n] = slope*rate;
+        //printf("[%d] W:%Lf S:%Lf\n", n, layerO[n].bias, slope);
+        for (int i = 0; i < 9; i++) {
+            layerO[n].weights[i]+=del;
+            nn(arr, output);
+            long double yf = cost( output, prd );
+            //printf("Cf: %Lf\n", yf);
+            long double slope = (yf - yi) / del;
+            layerO[n].weights[i]-=del;
+            //printf("[%d][%d]: %Lf\n", n, i, slope*rate);
+            w2[n][i] = slope*rate;
+            //printf("[%d][%d] W:%Lf S:%Lf\n", n, i, layerO[n].weights[i], slope);
+        }
+    }
+
+    // put stored values back into NN
+    for (int n=0; n<9; n++) {
+        layer1[n].bias += b1[n];
+        layerO[n].bias += b2[n];
+        for (int i=0; i<9; i++) {
+            layer1[n].weights[i] += w1[n][i];
+            layerO[n].weights[i] += w2[n][i];
+printf("[%d][%d]: %Lf:%Lf | %Lf:%Lf\n",n,i,layer1[n].weights[i],w1[n][i],layerO[n].weights[i],w2[n][i]);
+        }
+    }
 
 
 }
@@ -150,10 +215,8 @@ void backprop(double arr[], double prd[]) { // input, predicted
 // for backprop, we will first record new weights and biases, and record it in arrays
 // at the end, changes will be applied by looping
 
-//
 
-
-int max_index(double arr[])
+int max_index(long double arr[])
 {
     int max = 0;
     for (int i=0; i<9; i++)
@@ -167,68 +230,102 @@ int max_index(double arr[])
 }
 
 
-void ai_play(double arr[])
+void ai_play(long double arr[])
 {
-    double layerOo[9];
-    nn(arr, layerOo);
+    long double layerOo[9];
+    long double inv[9] = {0.0};
+    for (int i = 0; i<9; i++) {
+        inv[i] = -1*arr[i];
+    }
+    nn(inv, layerOo); // AI thinks that -1 is opp that is why
+    //long double temp[] = {0,0,0,1,1,1,0,0,0};
+    //backprop(arr,temp);
     // select max from output
-    double temp[] = {0,0,0,1,1,1,0,0,0};
-    //printf("cost: %f\n", cost(layerOo, temp));
+
+    //printf("cost: %Lf\n", cost(layerOo, temp));
     int max = max_index(layerOo);
-    printf("max: %d\n", max);
-    //printf("[%d]: %f\n", i+1, layer1o[i]);
+    printf("max: %d\n", max+1);
+    //printf("[%d]: %Lf\n", i+1, layer1o[i]);
 
     if (arr[max]==0)
     {
         arr[max] = -1;
     }
+    else {
+        long double inv[9] = {0.0};
+        for (int i = 0; i<9; i++) {
+            if (arr[i] == 0 ) {
+                inv[i] = 1;
+            }
+            else {
+                inv[i] = -1;
+            }
+        }
+        printf("--- INV \n");
+        printx(inv);
+        backprop(arr, inv);
+        ai_play(arr);
+
+    } // teach AI to not place in already used places
+
 
 }
 
-void play(double arr[])
+void play(long double arr[])
 {
     // take input from user
     if (won(arr) == 0)
     {
         ai_play(arr);
         printx(arr);
-        user_play(arr);
+        long double inp[9];
+        for (int  i =0; i<9; i++) {
+            inp[i] = arr[i];
+        }
+        if (won(arr) == 0) {
+            user_play(arr);}
+        else goto wonx;
+
+        backprop(inp, arr); //learn from user
         play(arr);
         return;
     }
     else {
+        wonx:
         printf("---GAME OVER---\n");
         printx(arr);
+        printf("---NEW GAME---\n");
+        long double mash[9] = {0.0};
+        play(mash);
         return;
     }
 
 }
 
-double init_weight()
+long double init_weight()
 {
-    return ((double)rand())/((double)RAND_MAX);
+    return ((long double)rand())/((long double)RAND_MAX);
 }
 
 void init_wb(struct node layer[])
 {
     for (int j = 0; j<9; j++)
     {
-        layer[j].bias = (double)0.0;
+        layer[j].bias = (long double)0.0;
         for (int i =0; i<9; i++)
         {
-            layer[j].weights[i] = (double)init_weight();
+            layer[j].weights[i] = (long double)init_weight();
         }
     }
 }
 
-int main(void)
+void main(void)
 {
-    double mash[9] = {0.0};
+    long double mash[9] = {0.0};
     // initalize weights and biases
     init_wb(layer1);
     init_wb(layerO);
     //printx(mash);
     play(mash);
 
-    return 0;
 }
